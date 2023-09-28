@@ -1,17 +1,15 @@
-import unittest
 import logging
-import multiprocessing
+import unittest
+
 import torch
-from rl_baselines.core import create_models, logdir, solve, logger, Episodes, make_env
+
 from rl_baselines.baselines import (
-    FutureReturnBaseline,
     DiscountedReturnBaseline,
     GAEBaseline,
 )
+from rl_baselines.core import create_models, logdir, solve, logger, Episodes, make_env
 from rl_baselines.model_updates import ActorCriticUpdate, ValueUpdate
 from rl_baselines.reinforce import REINFORCE
-from rl_baselines.ppo import PPO
-
 
 logger.setLevel(logging.CRITICAL)
 

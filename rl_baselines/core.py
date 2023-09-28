@@ -60,7 +60,7 @@ def gae_advantages(advantages, values, dones, rews, gamma, lambda_):
         try:
             delta = rews[:, t] + gamma * nextvals * nextnotdone - values[:, t]
             advantages[:, t] = lastgaelam = (
-                delta + gamma * lambda_ * nextnotdone * lastgaelam
+                    delta + gamma * lambda_ * nextnotdone * lastgaelam
             )
         except Exception:
             import ipdb
@@ -151,7 +151,6 @@ class Episodes:
 
 
 def gather_episodes(episodes, env, num_steps, policy, epoch):
-
     # reset episode-specific variables
 
     # obs = env.reset()  # first obs comes from starting distribution
@@ -191,7 +190,6 @@ def gather_episodes(episodes, env, num_steps, policy, epoch):
 
 
 def train_one_epoch(env, num_steps, epoch, episodes, policy_update, device):
-
     policy = policy_update.policy
 
     # collect experience by acting in the environment with current policy
@@ -233,7 +231,7 @@ def default_model(env, hidden_sizes, n_acts):
 
 def make_env(env_name, num_envs, **kwargs):
     env = SubprocVecEnv(
-        [lambda: make_single_env(env_name, **kwargs) for i in range(num_envs)]
+        [lambda: make_single_env(env_name, **kwargs) for _ in range(num_envs)]
     )
     return env
 
@@ -245,7 +243,7 @@ def default_policy_model(env, hidden_sizes):
         n_acts = env.action_space.n
     elif isinstance(env.action_space, Box):
         assert (
-            len(env.action_space.shape) == 1
+                len(env.action_space.shape) == 1
         ), f"This example only works for envs with Box(n,) not {env.action_space} action spaces."
         n_acts = env.action_space.shape[0]
     model = default_model(env, hidden_sizes, n_acts)
@@ -271,14 +269,14 @@ def create_models(env, hidden_sizes, pi_lr, vf_lr):
 
 
 def solve(
-    env_name,
-    env,
-    policy_update,
-    logdir,
-    epochs=100,
-    batch_size=5000,
-    render=False,
-    device=None,
+        env_name,
+        env,
+        policy_update,
+        logdir,
+        epochs=100,
+        batch_size=5000,
+        render=False,
+        device=None,
 ):
     if device is None:
         device = "cpu"

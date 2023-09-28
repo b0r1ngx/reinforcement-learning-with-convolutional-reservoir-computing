@@ -1,10 +1,3 @@
-import argparse
-import torch
-import gym
-from rl_baselines.core import make_env
-import numpy as np
-
-
 def test_agent(env_name, policy_update_filename, frame_stack):
     policy_update = torch.load(policy_update_filename)
     policy_update.eval()
@@ -36,8 +29,6 @@ if __name__ == "__main__":
     from rl_baselines.core import logger
 
     # Necessary for lazy torch.load
-    from rl_baselines.reinforce import REINFORCE
-    from rl_baselines.ppo import PPO
     from rl_baselines.rdn import *
     from rl_baselines.rcrc import *
 

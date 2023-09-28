@@ -42,17 +42,18 @@ class SubprocVecEnv:
         self.closed = False
         self.num_envs = len(env_fns)
         self.remotes, self.work_remotes = zip(*[Pipe() for _ in range(self.num_envs)])
-        self.ps = [
-            Process(target=worker, args=(work_remote, remote, env_fn))
-            for (work_remote, remote, env_fn) in zip(
-                self.work_remotes, self.remotes, env_fns
-            )
-        ]
+        self.ps = [Process(
+            target=worker,
+            args=(work_remote, remote, env_fn)
+        ) for (work_remote, remote, env_fn) in zip(
+            self.work_remotes, self.remotes, env_fns
+        )]
+
         for p in self.ps:
-            p.daemon = (
-                True
-            )  # if the main process crashes, we should not cause things to hang
+            # if the main process crashes, we should not cause things to hang
+            p.daemon = True
             p.start()
+
         for remote in self.work_remotes:
             remote.close()
 
@@ -75,18 +76,19 @@ class SubprocVecEnv:
         return self.step_wait()
 
     def reset(self, specific_env=None):
-
         if specific_env is not None:
             self.remotes[specific_env].send(("reset", None))
             return self.remotes[specific_env].recv()
 
         for remote in self.remotes:
             remote.send(("reset", None))
+
         return np.stack([remote.recv() for remote in self.remotes])
 
     def reset_task(self):
         for remote in self.remotes:
             remote.send(("reset_task", None))
+
         return np.stack([remote.recv() for remote in self.remotes])
 
     def close(self):

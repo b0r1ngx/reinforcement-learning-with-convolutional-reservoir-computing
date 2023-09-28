@@ -6,7 +6,9 @@ from torch.distributions import Categorical, MultivariateNormal
 
 class Conv(nn.Module):
     def __init__(
-        self, input_shape, sizes, activation=nn.ReLU(inplace=True), out_activation=None
+            self, input_shape, sizes,
+            activation=nn.ReLU(inplace=True),
+            out_activation=None
     ):
         super().__init__()
 

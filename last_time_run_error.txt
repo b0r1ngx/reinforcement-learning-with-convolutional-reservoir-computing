@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/rcrc.py", line 220, in <module>
+    env = make_env(args.env_name, args.num_envs)
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/core.py", line 233, in make_env
+    env = SubprocVecEnv(
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/environment.py", line 55, in __init__
+    p.start()
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/process.py", line 121, in start
+    self._popen = self._Popen(self)
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/context.py", line 224, in _Popen
+    return _default_context.get_context().Process._Popen(process_obj)
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/context.py", line 288, in _Popen
+    return Popen(process_obj)
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/popen_spawn_posix.py", line 32, in __init__
+    super().__init__(process_obj)
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/popen_fork.py", line 19, in __init__
+    self._launch(process_obj)
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/popen_spawn_posix.py", line 47, in _launch
+    reduction.dump(process_obj, fp)
+  File "/Users/boringx/mambaforge/lib/python3.10/multiprocessing/reduction.py", line 60, in dump
+    ForkingPickler(file, protocol).dump(obj)
+AttributeError: Can't pickle local object 'make_env.<locals>.<listcomp>.<lambda>'

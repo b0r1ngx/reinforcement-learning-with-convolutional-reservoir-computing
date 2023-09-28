@@ -1,14 +1,17 @@
+import argparse
 import multiprocessing
-import torch.nn as nn
-import torch
-import cma
-import tqdm
-import numpy as np
 import os
-from torch.utils.tensorboard import SummaryWriter
-from rl_baselines.core import logger, logdir
+
+import cma
+import numpy as np
+import torch
+import torch.nn as nn
+import tqdm
 from gym.spaces import Discrete, Box
 from torch.distributions import Normal
+from torch.utils.tensorboard import SummaryWriter
+
+from rl_baselines.core import logger, logdir, make_env
 
 
 class Conv(nn.Module):
@@ -75,7 +78,8 @@ class RCRCUpdate(nn.Module):
         for p in self.model.parameters():
             p.requires_grad = False
         self.es = cma.CMAEvolutionStrategy(
-            np.zeros(1665 * n_acts), 0.1, {"popsize": num_envs}
+            np.zeros(1665 * n_acts), 0.1,
+            {"popsize": num_envs}
         )
 
         self.W_outs = self.es.ask()
@@ -88,7 +92,9 @@ class RCRCUpdate(nn.Module):
         x_conv, x_esn = self.model(obs)
         B = obs.shape[0]
 
-        S = torch.cat((x_conv, x_esn, torch.ones((B, 1))), dim=1)
+        S = torch.cat((
+            x_conv, x_esn, torch.ones((B, 1))
+        ), dim=1)
 
         out = torch.zeros((B, self.n_acts))
         for i in range(B):
@@ -196,17 +202,17 @@ def solve(env_name, multi_env, policy_update, logdir, epochs, n_episodes):
     return False if env.spec.reward_threshold else None
 
 
+# TODO: Make it work on GPU (MPS) instead of CPU
+#  1. Try to run as is (on cpu)
+#  2. benchmark on my machine between cpu/mps run
 if __name__ == "__main__":
-    import argparse
-    from rl_baselines.core import make_env
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--env-name", "--env", type=str, default="CarRacing-v0")
     parser.add_argument("--num-envs", type=int, default=multiprocessing.cpu_count())
     parser.add_argument("--n-episodes", type=int, default=4)
 
     parser.add_argument("--alpha", type=float, default=0.5)
-    parser.add_argument("--epochs", type=int, default=1000)
+    parser.add_argument("--epochs", type=int, default=100)  # 1000
     args = parser.parse_args()
 
     logger.info("Using RCRC formulation.")
@@ -216,9 +222,11 @@ if __name__ == "__main__":
         n_acts = env.action_space.n
     elif isinstance(env.action_space, Box):
         assert (
-            len(env.action_space.shape) == 1
+                len(env.action_space.shape) == 1
         ), f"This example only works for envs with Box(n,) not {env.action_space} action spaces."
         n_acts = env.action_space.shape[0]
+    else:
+        raise 'n_acts not defined'
 
     fixed_model = FixedRandomModel(args.alpha)
 
