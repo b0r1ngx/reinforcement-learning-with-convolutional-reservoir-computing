@@ -218,9 +218,9 @@ class RunningMeanStd(object):
         m_a = self.var * (self.count)
         m_b = batch_var * (batch_count)
         M2 = (
-            m_a
-            + m_b
-            + np.square(delta) * self.count * batch_count / (self.count + batch_count)
+                m_a
+                + m_b
+                + np.square(delta) * self.count * batch_count / (self.count + batch_count)
         )
         new_var = M2 / (self.count + batch_count)
 
@@ -233,18 +233,10 @@ class RunningMeanStd(object):
 
 class RDNModelUpdate(ModelUpdate):
     def __init__(
-        self,
-        model,
-        optimizer,
-        gamma,
-        gamma_ext,
-        lambda_,
-        clip_ratio,
-        iters,
-        value_int_coeff,
-        value_ext_coeff,
-        ent_coeff,
-        num_mini_batches,
+            self, model, optimizer,
+            gamma, gamma_ext, lambda_,
+            clip_ratio, iters, value_int_coeff,
+            value_ext_coeff, ent_coeff, num_mini_batches,
     ):
         nn.Module.__init__(self)
         self.model = model
@@ -277,15 +269,9 @@ class RDNModelUpdate(ModelUpdate):
         return self.model.policy(obs)
 
     def loss(
-        self,
-        returns_int,
-        returns_ext,
-        acts,
-        advs,
-        old_log_probs,
-        obs,
-        obs_mean,
-        obs_std,
+            self, returns_int, returns_ext,
+            acts, advs, old_log_probs,
+            obs, obs_mean, obs_std,
     ):
         current_obs = obs[:, :-1, ...]
 
@@ -495,17 +481,15 @@ if __name__ == "__main__":
     if isinstance(env.action_space, Discrete):
         n_acts = env.action_space.n
     elif isinstance(env.action_space, Box):
-        assert (
-            len(env.action_space.shape) == 1
-        ), f"This example only works for envs with Box(n,) not {env.action_space} action spaces."
+        assert len(env.action_space.shape) == 1,\
+            print(f"This example only works for envs with Box(n,) not {env.action_space} action spaces.")
         n_acts = env.action_space.shape[0]
 
     global_model = GlobalModel(n_acts)
     optimizer = torch.optim.Adam(global_model.parameters(), lr=args.lr)
 
-    assert (
-        args.num_envs >= args.num_mini_batches
-    ), "We need more environments than minibatches."
+    assert args.num_envs >= args.num_mini_batches,\
+        print("We need more environments than minibatches.")
 
     update = RDNModelUpdate(
         global_model,

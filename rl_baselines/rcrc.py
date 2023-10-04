@@ -156,7 +156,10 @@ def run_full_episode(multi_env, policy):
     return rewards
 
 
-def solve(env_name, multi_env, policy_update, logdir, epochs, n_episodes):
+def solve(
+        env_name, multi_env, policy_update,
+        logdir, epochs, n_episodes
+):
     max_ret = -1e9
     writer = SummaryWriter(log_dir=logdir)
 
@@ -221,7 +224,7 @@ def solve(env_name, multi_env, policy_update, logdir, epochs, n_episodes):
 #  2. benchmark on my machine between cpu/mps run
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # was: v0, crash, cos its deprecated
+    # with v0, crashing, cos v0 deprecated
     parser.add_argument("--env-name", "--env", type=str, default="CarRacing-v2")
     parser.add_argument("--num-envs", type=int, default=multiprocessing.cpu_count())
     parser.add_argument("--n-episodes", type=int, default=4)
@@ -236,9 +239,9 @@ if __name__ == "__main__":
     if isinstance(env.action_space, Discrete):
         n_acts = env.action_space.n
     elif isinstance(env.action_space, Box):
-        assert (len(env.action_space.shape) == 1), \
-            (f"This example only works for envs with Box(n,)"
-             f" not {env.action_space} action spaces.")
+        assert len(env.action_space.shape) == 1,\
+            print(f"This example only works for envs with Box(n,)"
+                  f" not {env.action_space} action spaces.")
         n_acts = env.action_space.shape[0]
     else:
         raise 'n_acts not defined'

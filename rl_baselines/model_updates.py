@@ -40,9 +40,8 @@ class ValueUpdate(ModelUpdate):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        assert isinstance(
-            self.baseline, DiscountedReturnBaseline
-        ), "Value models need to learn discounted returns"
+        assert isinstance(self.baseline, DiscountedReturnBaseline),\
+            print("Value models need to learn discounted returns")
         self.gamma = self.baseline.gamma
 
     def update(self, episodes):

@@ -245,9 +245,9 @@ def default_policy_model(env, hidden_sizes):
     if isinstance(env.action_space, Discrete):
         n_acts = env.action_space.n
     elif isinstance(env.action_space, Box):
-        assert (
-                len(env.action_space.shape) == 1
-        ), f"This example only works for envs with Box(n,) not {env.action_space} action spaces."
+        assert len(env.action_space.shape) == 1,\
+            print(f"This example only works for envs with Box(n,)"
+                  f"not {env.action_space} action spaces.")
         n_acts = env.action_space.shape[0]
     model = default_model(env, hidden_sizes, n_acts)
     if isinstance(env.action_space, Discrete):
@@ -263,9 +263,7 @@ def default_policy_model(env, hidden_sizes):
 
 def create_models(env, hidden_sizes, pi_lr, vf_lr):
     policy = default_policy_model(env, hidden_sizes)
-
     poptimizer = torch.optim.Adam(policy.parameters(), lr=pi_lr)
-
     value = ValueModel(default_model(env, hidden_sizes, 1))
     voptimizer = torch.optim.Adam(value.parameters(), lr=vf_lr)
     return (policy, poptimizer), (value, voptimizer)
@@ -278,7 +276,6 @@ def solve(
         logdir,
         epochs=100,
         batch_size=5000,
-        render=False,
         device=None,
 ):
     if device is None:

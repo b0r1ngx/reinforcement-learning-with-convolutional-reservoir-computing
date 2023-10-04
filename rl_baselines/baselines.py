@@ -40,7 +40,8 @@ class GAEBaseline(Baseline):
         self.gamma = gamma
         self.lambda_ = lambda_
         self.value_model = value_model
-        assert gamma > lambda_, f"For stability λ({lambda_}) < γ({gamma}) is advised"
+        assert gamma > lambda_,\
+            print(f"For stability λ({lambda_}) < γ({gamma}) is advised")
 
     def _get(self, episodes):
         with torch.no_grad():

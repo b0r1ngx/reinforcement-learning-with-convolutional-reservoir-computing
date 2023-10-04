@@ -1,3 +1,6 @@
+import gymnasium as gym
+
+
 def test_agent(env_name, policy_update_filename, frame_stack):
     render = True
     render = 'human' if render else None
@@ -11,6 +14,12 @@ def test_agent(env_name, policy_update_filename, frame_stack):
         apply_api_compatibility=True,
         frame_stack=frame_stack
     )
+
+    # env = gym.make(
+    #     id=env_name,
+    #
+    # )
+
     obs = env.reset()
     done = np.array([False])
     policy = policy_update.policy
