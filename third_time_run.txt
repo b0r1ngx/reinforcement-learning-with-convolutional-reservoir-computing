@@ -1,0 +1,87 @@
+commit: trying to resolve issues that appear, when i try to start project;u
+fully upgrade from gym to gymnasium
+using stable_baselines3 (main component is SubprocVecEnv),
+and inside edit:
+1. _worker(): remote.send((env.observation_space, env.action_space, env.spec))
+2. SubprocVecEnv(): observation_space, action_space, self.spec = self.remotes[0].recv()
+
+Run:
+2023-10-04 15:52:39,790 - rcrc.py:231 - INFO - Using RCRC formulation.
+(6_w,12)-aCMA-ES (mu_w=3.7,w_1=40%) in dimension 4995 (seed=552455, Wed Oct  4 15:52:45 2023)
+2023-10-04 15:52:45,125 - rcrc.py:170 - DEBUG - Attempting to solve CarRacing-v2
+2023-10-04 15:52:45,125 - rcrc.py:171 - DEBUG - Epochs: 10
+2023-10-04 15:52:45,125 - rcrc.py:172 - DEBUG - Episodes per update: 4
+2023-10-04 15:52:45,125 - rcrc.py:173 - DEBUG - Policy Update: RCRCUpdate(
+  (model): FixedRandomModel(
+    (conv): Conv(
+      (conv1): Conv2d(3, 32, kernel_size=(31, 31), stride=(2, 2))
+      (conv2): Conv2d(32, 64, kernel_size=(14, 14), stride=(2, 2))
+      (conv3): Conv2d(64, 128, kernel_size=(6, 6), stride=(2, 2))
+    )
+    (W_in): Linear(in_features=1152, out_features=512, bias=False)
+    (W): Linear(in_features=512, out_features=512, bias=False)
+  )
+)
+2023-10-04 15:52:45,125 - rcrc.py:174 - DEBUG - Parameters: 4995
+2023-10-04 15:52:45,125 - rcrc.py:175 - DEBUG - Reward threshold: 900
+2023-10-04 15:55:08,628 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+ 10%|█         | 1/10 [02:23<21:32, 143.62s/it]
+
+ 2023-10-04 15:55:08,741 - rcrc.py:212 - DEBUG - Rewards: [-65.98274999  15.54802446 -82.87656273 179.96778394 -82.46094734
+ -65.4333412  -14.68637606 -82.93675622 -83.85518363 -48.04654216
+ -10.95471367 -69.53131272]
+2023-10-04 15:55:08,741 - rcrc.py:213 - DEBUG - Rewards mean: -34.27072310969123
+2023-10-04 15:57:32,640 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+2023-10-04 15:57:32,741 - rcrc.py:212 - DEBUG - Rewards: [-18.45058985 -20.00433613 -82.99069678 -12.13649716 181.45869639
+ -19.02370012 -83.03448623 -27.79130036  69.94559209 -83.1648935
+ -16.08582564   9.60856026]
+2023-10-04 15:57:32,741 - rcrc.py:213 - DEBUG - Rewards mean: -8.472456420198293
+ 20%|██        | 2/10 [04:47<19:10, 143.84s/it]
+
+ 2023-10-04 15:59:56,297 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+2023-10-04 15:59:56,421 - rcrc.py:212 - DEBUG - Rewards: [-16.31505758  46.22961171 -74.87719297 113.58944749  -5.72655817
+  41.81178865 -81.8432766  -32.92305599  42.50577464 -86.99307064
+ -86.30541933 243.41971985]
+2023-10-04 15:59:56,421 - rcrc.py:213 - DEBUG - Rewards mean: 8.547725919573375
+ 30%|███       | 3/10
+
+ [07:11<16:46, 143.77s/it]2023-10-04 16:02:20,910 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+ 40%|████      | 4/10 [09:35<14:24, 144.09s/it]2023-10-04 16:02:21,006 - rcrc.py:212 - DEBUG - Rewards: [166.63892079  -2.20845543  -5.46371944 187.14336102 -32.58490053
+ -29.09362107 262.73721033 -49.44748844 -76.28467019 -81.74712183
+ -78.44063363 -83.48254847]
+2023-10-04 16:02:21,007 - rcrc.py:213 - DEBUG - Rewards mean: 14.813861091246602
+2
+023-10-04 16:04:43,810 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+2023-10-04 16:04:43,895 - rcrc.py:212 - DEBUG - Rewards: [-81.64427026 -81.91150415 421.5394562  -38.80125847 -81.4517734
+ -21.76028817 -78.98946677 -26.87294628   3.29848712 446.19924636
+ -30.97444086 -83.43379057]
+2023-10-04 16:04:43,895 - rcrc.py:213 - DEBUG - Rewards mean: 28.766454229571494
+ 50%|█████     | 5/10 [11:58<11:58, 143.66s/it]
+
+2023-10-04 16:07:09,282 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+ 60%|██████    | 6/10 [14:24<09:37, 144.28s/it]2023-10-04 16:07:09,375 - rcrc.py:212 - DEBUG - Rewards: [-28.12025681 168.34956449 -20.37172211  74.85681861 456.32945995
+ -86.10354967 -60.06019484 -79.98821995  91.25648532  14.52313221
+ 218.04826998  64.3154629 ]
+2023-10-04 16:07:09,375 - rcrc.py:213 - DEBUG - Rewards mean: 67.75293750599475
+2023-10-04 16:09:35,045 - rcrc.py:212 - DEBUG - Rewards: [240.68550761 -17.5304388   46.49123576 -82.50694093 387.27822646
+ -34.38268717 -38.22350985 -31.78104488 -80.58503128 -24.64533003
+ 244.63463267 -37.81541082]
+2023-10-04 16:09:35,046 - rcrc.py:213 - DEBUG - Rewards mean: 47.63493406336064
+ 70%|███████   | 7/10 [16:49<07:14, 144.73s/it]
+
+2023-10-04 16:12:02,849 - rcrc.py:192 - DEBUG - Saved new best model: runs/Oct04_15-52-39/checkpoint.pth
+2023-10-04 16:12:02,958 - rcrc.py:212 - DEBUG - Rewards: [251.44395421 -70.75491405 171.74190233 -83.16416547 -75.02032223
+ 166.24420939 580.93304775  30.1041358  -75.59382084 -79.35292168
+ -37.87874808 313.48383591]
+2023-10-04 16:12:02,959 - rcrc.py:213 - DEBUG - Rewards mean: 91.0155160863319
+ 90%|█████████ | 9/10 [21:43<02:25, 145.69s/it]2023-10-04 16:14:28,525 - rcrc.py:212 - DEBUG - Rewards: [155.73292746 179.39706812  -7.34654886  72.67420668  90.84067539
+ -83.06932743 410.19299118 -26.64723745  75.64749358 -52.91196405
+ -23.25482597  93.20456493]
+2023-10-04 16:14:28,525 - rcrc.py:213 - DEBUG - Rewards mean: 73.70500196562527
+100%|██████████| 10/10 [24:10<00:00, 145.01s/it]
+2023-10-04 16:16:55,247 - rcrc.py:212 - DEBUG - Rewards: [ -7.42551025 125.91846174  91.25796072 143.35690194 -24.96393552
+ 171.16036694  14.53189059 -82.48145491  75.89105233  -9.54368624
+ 340.54506453 -78.630717  ]
+2023-10-04 16:16:55,248 - rcrc.py:213 - DEBUG - Rewards mean: 63.30136623932518
+
+Process finished with exit code 0

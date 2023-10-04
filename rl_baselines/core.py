@@ -1,5 +1,5 @@
 import numpy as np
-from gym.spaces import Discrete, Box
+from gymnasium.spaces import Discrete, Box
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import logging
@@ -7,8 +7,8 @@ import datetime
 import os
 import sys
 from collections import deque
-# from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-from rl_baselines.environment import SubprocVecEnv, make_single_env
+from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
+from rl_baselines.environment import make_single_env  # ,SubprocVecEnv
 from rl_baselines.models import ContinuousPolicy, DiscretePolicy, MLP, Conv, ValueModel
 
 
@@ -217,7 +217,7 @@ def default_model(env, hidden_sizes, n_acts):
         env.action_space, (Discrete, Box)
     ), "This example only works for envs with discrete/box action spaces."
 
-    assert len(env.observation_space.shape) in [1,3,],\
+    assert len(env.observation_space.shape) in [1, 3, ], \
         (f"This example only works for envs with Box(n,)or Box(h, w, c)"
          f"not {env.observation_space} observation spaces.")
     if len(env.observation_space.shape) == 1:
@@ -230,9 +230,11 @@ def default_model(env, hidden_sizes, n_acts):
     return model
 
 
-def make_env(env_name, num_envs, **kwargs):
+def make_env(env_name, num_envs, render_mode=None, **kwargs):
     env = SubprocVecEnv(
-        [lambda: make_single_env(env_name, **kwargs) for _ in range(num_envs)]
+        [lambda: make_single_env(
+            env_name, render_mode, **kwargs
+        ) for _ in range(num_envs)]
     )
     return env
 
@@ -331,7 +333,7 @@ def solve(
             % (epoch, loss_string, rets, lens)
         )
         if visited_rooms:
-            logger.debug(f"Visited rooms : {visited_rooms}")
+            logger.debug(f"Visited rooms: {visited_rooms}")
         env_step += num_steps * env.num_envs
 
         for loss_name, loss in losses.items():

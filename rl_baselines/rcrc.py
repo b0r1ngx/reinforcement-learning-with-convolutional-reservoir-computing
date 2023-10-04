@@ -172,6 +172,8 @@ def solve(env_name, multi_env, policy_update, logdir, epochs, n_episodes):
     logger.debug(f"Episodes per update: {n_episodes}")
     logger.debug(f"Policy Update: {policy_update}")
     logger.debug(f"Parameters: {parameters}")
+    # Reward threshold (reward_threshold: float) – Gym environment argument,
+    # the reward threshold before the task is considered solved [1]
     logger.debug(f"Reward threshold: {env.spec.reward_threshold}")
     for i in tqdm.tqdm(range(epochs)):
         rewards = np.zeros(multi_env.num_envs)

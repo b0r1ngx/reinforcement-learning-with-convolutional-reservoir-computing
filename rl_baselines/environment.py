@@ -2,8 +2,8 @@ import multiprocessing as mp
 import numpy as np
 import cv2
 from collections import deque
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 from copy import copy
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
@@ -20,26 +20,36 @@ def worker(
 ):
     parent_remote.close()
     env = _patch_env(env_fn_wrapper.var())
+    reset_info = {}
     while True:
-        cmd, data = remote.recv()
-        if cmd == "step":
-            ob, reward, term, trunc, info = env.step(data)
-            done = term or trunc
-            if done:
-                ob = env.reset()
-            remote.send((ob, reward, done, info))
-        elif cmd == "reset":
-            ob = env.reset()
-            remote.send(ob)
-        elif cmd == "render":
-            remote.send(env.render())
-        elif cmd == "close":
-            remote.close()
+        try:
+            cmd, data = remote.recv()
+            if cmd == "step":
+                ob, reward, term, trunc, info = env.step(data)
+                done = term or trunc
+                if done:
+                    ob, reset_info = env.reset()
+
+                remote.send((ob, reward, done, info))
+            elif cmd == "reset":
+                observation, reset_info = env.reset(seed=data)
+                remote.send((observation, reset_info))
+            elif cmd == "render":
+                remote.send(env.render())
+            elif cmd == "close":
+                env.close()
+                remote.close()
+                break
+            elif cmd == "get_spaces":
+                remote.send((
+                    env.observation_space,
+                    env.action_space,
+                    env.spec
+                ))
+            else:
+                raise NotImplementedError(f"{cmd} is not implemented in the worker")
+        except EOFError:
             break
-        elif cmd == "get_spaces":
-            remote.send((env.observation_space, env.action_space, env.spec))
-        else:
-            raise NotImplementedError
 
 
 class SubprocVecEnv:
@@ -71,7 +81,7 @@ class SubprocVecEnv:
             # todo: we can try to use _worker from subproc_vec_env.py
             # todo: check how it works?
             # pytype: disable=attribute-error
-            process = ctx.Process(target=worker, args=args, daemon=True)  # type: ignore[attr-defined]
+            process = ctx.Process(target=_worker, args=args, daemon=True)  # type: ignore[attr-defined]
             # pytype: enable=attribute-error
             process.start()
             self.processes.append(process)
@@ -182,8 +192,8 @@ def unwrap(env):
         return env
 
 
-def make_single_env(env_name, **kwargs):
-    env = gym.make(env_name)
+def make_single_env(env_name, render_mode=None, **kwargs):
+    env = gym.make(env_name, render_mode=render_mode)
     env = AddEpisodeStats(env)
     if "NoFrameskip" in env_name:
         env = wrap_deepmind(make_atari(env, env_name), **kwargs)
@@ -399,7 +409,7 @@ class StickyActionEnv(gym.Wrapper):
             action = self.last_action
         self.last_action = action
         obs, reward, term, trunc, info = self.env.step(action)
-        return obs, reward,term, trunc, info
+        return obs, reward, term, trunc, info
 
 
 class MaxAndSkipEnv(gym.Wrapper):

@@ -2,7 +2,7 @@ from rl_baselines.core import logger, logdir, gae_advantages, discounted_returns
 from rl_baselines.ppo import ppo_loss
 from rl_baselines.model_updates import ModelUpdate
 from torch.distributions import Categorical
-from gym.spaces import Discrete, Box
+from gymnasium.spaces import Discrete, Box
 
 import multiprocessing
 import torch.nn.functional as F

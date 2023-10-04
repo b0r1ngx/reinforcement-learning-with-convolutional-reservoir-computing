@@ -1,3 +1,5 @@
+commit: start project how get it:
+
 Traceback (most recent call last):
   File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/rcrc.py", line 220, in <module>
     env = make_env(args.env_name, args.num_envs)
