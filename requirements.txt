@@ -1,3 +1,6 @@
 torch
-gym
+gym[box2d]  # pip install 'gym[box2d]'
+gymnasium # todo: delete gym
 cma
+stable-baselines3
+shimmy

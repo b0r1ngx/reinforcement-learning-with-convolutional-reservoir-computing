@@ -1,0 +1,22 @@
+/Users/boringx/mambaforge/lib/python3.10/site-packages/gym/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)
+  if not isinstance(terminated, (bool, np.bool8)):
+  0%|          | 0/10 [00:35<?, ?it/s]
+  
+Traceback (most recent call last):
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/rcrc.py", line 249, in <module>
+    solve(
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/rcrc.py", line 179, in solve
+    rews = run_full_episode(multi_env, policy_update.policy)
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/rcrc.py", line 151, in run_full_episode
+    obs, rews, ds, infos = env.step(acts.detach().numpy())
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/environment.py", line 96, in step
+    return self.step_wait()
+  File "/Users/boringx/PycharmProjects/reinforcement-learning-with-convolutional-reservoir-computing/rl_baselines/environment.py", line 92, in step_wait
+    return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
+  File "/Users/boringx/mambaforge/lib/python3.10/site-packages/stable_baselines3/common/vec_env/subproc_vec_env.py", line 232, in _flatten_obs
+    return np.stack(obs)  # type: ignore[arg-type]
+  File "/Users/boringx/mambaforge/lib/python3.10/site-packages/numpy/core/shape_base.py", line 443, in stack
+    arrays = [asanyarray(arr) for arr in arrays]
+  File "/Users/boringx/mambaforge/lib/python3.10/site-packages/numpy/core/shape_base.py", line 443, in <listcomp>
+    arrays = [asanyarray(arr) for arr in arrays]
+ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (2,) + inhomogeneous part.

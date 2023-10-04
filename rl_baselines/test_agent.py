@@ -12,7 +12,8 @@ def test_agent(env_name, policy_update_filename, frame_stack):
         env.render()
         dist = policy(torch.from_numpy(obs).float())
         act = dist.sample()
-        obs, rew, done, _ = env.step(act.numpy())
+        obs, rew, term, trunc, _ = env.step(act.numpy())
+        done = term or trunc
         total_reward += rew
         steps += 1
 
@@ -23,11 +24,8 @@ def test_agent(env_name, policy_update_filename, frame_stack):
 
 if __name__ == "__main__":
     import sys
-
     sys.path.append(".")
-
     from rl_baselines.core import logger
-
     # Necessary for lazy torch.load
     from rl_baselines.rdn import *
     from rl_baselines.rcrc import *
@@ -39,4 +37,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    test_agent(args.env_name, args.policy_update, args.frame_stack)
+    test_agent(
+        args.env_name,
+        args.policy_update,
+        args.frame_stack
+    )

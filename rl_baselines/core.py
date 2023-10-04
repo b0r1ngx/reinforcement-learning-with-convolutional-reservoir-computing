@@ -7,6 +7,7 @@ import datetime
 import os
 import sys
 from collections import deque
+# from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from rl_baselines.environment import SubprocVecEnv, make_single_env
 from rl_baselines.models import ContinuousPolicy, DiscretePolicy, MLP, Conv, ValueModel
 
@@ -157,7 +158,7 @@ def gather_episodes(episodes, env, num_steps, policy, epoch):
     if epoch == 0:
         obs = env.reset()  # first obs comes from starting distribution
     else:
-        obs, _, _, _ = env.step_wait()
+        obs, _, _, _, _ = env.step_wait()
 
     obs = torch.from_numpy(obs).float()
 
@@ -168,7 +169,8 @@ def gather_episodes(episodes, env, num_steps, policy, epoch):
         # act in the environment
         dist = policy(obs)
         acts = dist.sample()
-        obs, rews, dones, infos = env.step(acts.cpu().numpy())
+        obs, rews, term, trunc, infos = env.step(acts.cpu().numpy())
+        dones = term or trunc
         obs = torch.from_numpy(obs).float()
 
         episodes.acts[:, step] = acts  # Already torch tensor
@@ -215,10 +217,9 @@ def default_model(env, hidden_sizes, n_acts):
         env.action_space, (Discrete, Box)
     ), "This example only works for envs with discrete/box action spaces."
 
-    assert len(env.observation_space.shape) in [
-        1,
-        3,
-    ], f"This example only works for envs with Box(n,) or Box(h, w, c) not {env.observation_space} observation spaces."
+    assert len(env.observation_space.shape) in [1,3,],\
+        (f"This example only works for envs with Box(n,)or Box(h, w, c)"
+         f"not {env.observation_space} observation spaces.")
     if len(env.observation_space.shape) == 1:
         obs_dim = env.observation_space.shape[0]
         model = MLP(sizes=[obs_dim] + hidden_sizes + [n_acts])

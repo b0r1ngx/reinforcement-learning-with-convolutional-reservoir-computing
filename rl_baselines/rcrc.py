@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
-from gym.spaces import Discrete, Box
+from gymnasium.spaces import Box, Discrete
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
@@ -17,9 +17,15 @@ from rl_baselines.core import logger, logdir, make_env
 class Conv(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 32, 31, stride=2)
-        self.conv2 = nn.Conv2d(32, 64, 14, stride=2)
-        self.conv3 = nn.Conv2d(64, 128, 6, stride=2)
+        self.conv1 = nn.Conv2d(
+            3, 32, 31, stride=2
+        )
+        self.conv2 = nn.Conv2d(
+            32, 64, 14, stride=2
+        )
+        self.conv3 = nn.Conv2d(
+            64, 128, 6, stride=2
+        )
 
     def forward(self, image):
         x = self.conv1(image)
@@ -29,7 +35,10 @@ class Conv(nn.Module):
 
 
 def init_W(n, m):
-    weight = torch.normal(mean=torch.zeros((n, m)), std=torch.ones((n, m)))
+    weight = torch.normal(
+        mean=torch.zeros((n, m)),
+        std=torch.ones((n, m))
+    )
 
     N = n * m
     p = int(0.2 * N)
@@ -50,8 +59,12 @@ class FixedRandomModel(nn.Module):
     def __init__(self, alpha):
         super().__init__()
         self.conv = Conv()
-        self.W_in = nn.Linear(1152, 512, bias=False)
-        self.W = nn.Linear(512, 512, bias=False)
+        self.W_in = nn.Linear(
+            1152, 512, bias=False
+        )
+        self.W = nn.Linear(
+            512, 512, bias=False
+        )
         self.W.weight.data = init_W(512, 512)
         self.x_esn = None
         self.alpha = alpha
@@ -59,7 +72,7 @@ class FixedRandomModel(nn.Module):
     def forward(self, obs):
         B = obs.shape[0]
         x_conv = self.conv(obs)
-        x_conv_flat = x_conv.view(B, -1)
+        x_conv_flat = x_conv.reshape(B, -1)
 
         if self.x_esn is None or self.x_esn.shape[0] != B:
             x_esn = torch.tanh(self.W_in(x_conv_flat))
@@ -137,7 +150,7 @@ def run_full_episode(multi_env, policy):
         acts = dist.sample()
         obs, rews, ds, infos = env.step(acts.detach().numpy())
         obs = torch.from_numpy(obs).float()
-        dones = dones + ds  # or
+        dones = dones + ds
         rewards += rews * (1 - dones)
 
     return rewards
@@ -161,7 +174,6 @@ def solve(env_name, multi_env, policy_update, logdir, epochs, n_episodes):
     logger.debug(f"Parameters: {parameters}")
     logger.debug(f"Reward threshold: {env.spec.reward_threshold}")
     for i in tqdm.tqdm(range(epochs)):
-
         rewards = np.zeros(multi_env.num_envs)
         for j in range(n_episodes):
             rews = run_full_episode(multi_env, policy_update.policy)
@@ -203,16 +215,17 @@ def solve(env_name, multi_env, policy_update, logdir, epochs, n_episodes):
 
 
 # TODO: Make it work on GPU (MPS) instead of CPU
-#  1. Try to run as is (on cpu)
+#  1. Try to run as it is (on cpu)
 #  2. benchmark on my machine between cpu/mps run
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env-name", "--env", type=str, default="CarRacing-v0")
+    # was: v0, crash, cos its deprecated
+    parser.add_argument("--env-name", "--env", type=str, default="CarRacing-v2")
     parser.add_argument("--num-envs", type=int, default=multiprocessing.cpu_count())
     parser.add_argument("--n-episodes", type=int, default=4)
 
     parser.add_argument("--alpha", type=float, default=0.5)
-    parser.add_argument("--epochs", type=int, default=100)  # 1000
+    parser.add_argument("--epochs", type=int, default=10)  # 1000
     args = parser.parse_args()
 
     logger.info("Using RCRC formulation.")
@@ -221,9 +234,9 @@ if __name__ == "__main__":
     if isinstance(env.action_space, Discrete):
         n_acts = env.action_space.n
     elif isinstance(env.action_space, Box):
-        assert (
-                len(env.action_space.shape) == 1
-        ), f"This example only works for envs with Box(n,) not {env.action_space} action spaces."
+        assert (len(env.action_space.shape) == 1), \
+            (f"This example only works for envs with Box(n,)"
+             f" not {env.action_space} action spaces.")
         n_acts = env.action_space.shape[0]
     else:
         raise 'n_acts not defined'

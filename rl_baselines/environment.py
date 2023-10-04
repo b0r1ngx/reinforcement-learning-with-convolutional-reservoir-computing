@@ -1,21 +1,30 @@
-from multiprocessing import Process, Pipe
+import multiprocessing as mp
 import numpy as np
 import cv2
 from collections import deque
 import gym
 from gym import spaces
 from copy import copy
+from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper
+from stable_baselines3.common.vec_env.patch_gym import _patch_env
+from stable_baselines3.common.vec_env.subproc_vec_env import _flatten_obs
+from stable_baselines3.common.vec_env.subproc_vec_env import _worker
 
 cv2.ocl.setUseOpenCL(False)
 
 
-def worker(remote, parent_remote, env_fn):
+def worker(
+        remote: mp.connection.Connection,
+        parent_remote: mp.connection.Connection,
+        env_fn_wrapper: CloudpickleWrapper
+):
     parent_remote.close()
-    env = env_fn()
+    env = _patch_env(env_fn_wrapper.var())
     while True:
         cmd, data = remote.recv()
         if cmd == "step":
-            ob, reward, done, info = env.step(data)
+            ob, reward, term, trunc, info = env.step(data)
+            done = term or trunc
             if done:
                 ob = env.reset()
             remote.send((ob, reward, done, info))
@@ -23,7 +32,7 @@ def worker(remote, parent_remote, env_fn):
             ob = env.reset()
             remote.send(ob)
         elif cmd == "render":
-            remote.send(env.render(mode="rgb_array"))
+            remote.send(env.render())
         elif cmd == "close":
             remote.close()
             break
@@ -34,28 +43,39 @@ def worker(remote, parent_remote, env_fn):
 
 
 class SubprocVecEnv:
-    def __init__(self, env_fns, spaces=None):
+    def __init__(self, env_fns, start_method=None):
         """
         envs: list of gym environments to run in subprocesses
         """
         self.waiting = False
         self.closed = False
         self.num_envs = len(env_fns)
-        self.remotes, self.work_remotes = zip(*[Pipe() for _ in range(self.num_envs)])
-        self.ps = [Process(
-            target=worker,
-            args=(work_remote, remote, env_fn)
-        ) for (work_remote, remote, env_fn) in zip(
-            self.work_remotes, self.remotes, env_fns
-        )]
+        # store info returned by the reset method
+        self.reset_infos = [{} for _ in range(self.num_envs)]
+        # seeds to be used in the next call to env.reset()
+        self._seeds = [None for _ in range(self.num_envs)]
 
-        for p in self.ps:
-            # if the main process crashes, we should not cause things to hang
-            p.daemon = True
-            p.start()
+        if start_method is None:
+            # Fork is not a thread safe method (see issue #217)
+            # but is more user friendly (does not require to wrap the code in
+            # a `if __name__ == "__main__":`)
+            forkserver_available = "forkserver" in mp.get_all_start_methods()
+            start_method = "forkserver" if forkserver_available else "spawn"
+        ctx = mp.get_context(start_method)
 
-        for remote in self.work_remotes:
-            remote.close()
+        self.remotes, self.work_remotes = zip(*[mp.Pipe() for _ in range(self.num_envs)])
+        self.processes = []
+        for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns):
+            args = (work_remote, remote, CloudpickleWrapper(env_fn))
+            # daemon=True: if the main process crashes, we should not cause things to hang
+            # todo: we can try to use _worker from subproc_vec_env.py
+            # todo: check how it works?
+            # pytype: disable=attribute-error
+            process = ctx.Process(target=worker, args=args, daemon=True)  # type: ignore[attr-defined]
+            # pytype: enable=attribute-error
+            process.start()
+            self.processes.append(process)
+            work_remote.close()
 
         self.remotes[0].send(("get_spaces", None))
         self.observation_space, self.action_space, self.spec = self.remotes[0].recv()
@@ -69,21 +89,24 @@ class SubprocVecEnv:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
-        return np.stack(obs), np.stack(rews), np.stack(dones), infos
+        return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
     def step(self, actions):
         self.step_async(actions)
         return self.step_wait()
 
-    def reset(self, specific_env=None):
-        if specific_env is not None:
-            self.remotes[specific_env].send(("reset", None))
-            return self.remotes[specific_env].recv()
+    def reset(self):
+        for env_idx, remote in enumerate(self.remotes):
+            remote.send(("reset", self._seeds[env_idx]))
+        results = [remote.recv() for remote in self.remotes]
+        obs, self.reset_infos = zip(*results)
+        # Seeds are only used once
+        self._reset_seeds()
+        return _flatten_obs(obs, self.observation_space)
 
-        for remote in self.remotes:
-            remote.send(("reset", None))
-
-        return np.stack([remote.recv() for remote in self.remotes])
+    def _reset_seeds(self) -> None:
+        """Reset the seeds that are going to be used at the next reset."""
+        self._seeds = [None for _ in range(self.num_envs)]
 
     def reset_task(self):
         for remote in self.remotes:
@@ -105,8 +128,10 @@ class SubprocVecEnv:
 
     def render(self, mode="human"):
         for pipe in self.remotes:
-            pipe.send(("render", None))
-        imgs = np.stack([pipe.recv() for pipe in self.remotes])
+            pipe.send(("render",))
+        imgs = np.stack(
+            [pipe.recv() for pipe in self.remotes]
+        )
         bigimg = tile_images(imgs)
         if mode == "human":
             import cv2
@@ -217,9 +242,9 @@ class FrameStack(gym.Wrapper):
         return self._get_ob()
 
     def step(self, action):
-        ob, reward, done, info = self.env.step(action)
+        ob, reward, term, trunc, info = self.env.step(action)
         self.frames.append(ob)
-        return self._get_ob(), reward, done, info
+        return self._get_ob(), reward, term, trunc, info
 
     def _get_ob(self):
         assert len(self.frames) == self.k
@@ -269,14 +294,17 @@ class MontezumaInfoWrapper(gym.Wrapper):
         return int(ram[self.room_address])
 
     def step(self, action):
-        obs, rew, done, info = self.env.step(action)
+        obs, rew, term, trunc, info = self.env.step(action)
+        done = term or trunc
         self.visited_rooms.add(self.get_current_room())
         if done:
             if "episode" not in info:
                 info["episode"] = {}
-            info["episode"].update(visited_rooms=copy(self.visited_rooms))
+            info["episode"].update(
+                visited_rooms=copy(self.visited_rooms)
+            )
             self.visited_rooms.clear()
-        return obs, rew, done, info
+        return obs, rew, term, trunc, info
 
     def reset(self):
         return self.env.reset()
@@ -287,12 +315,16 @@ class DummyMontezumaInfoWrapper(gym.Wrapper):
         super(DummyMontezumaInfoWrapper, self).__init__(env)
 
     def step(self, action):
-        obs, rew, done, info = self.env.step(action)
+        obs, rew, term, trunc, info = self.env.step(action)
+        done = term or trunc
         if done:
             if "episode" not in info:
                 info["episode"] = {}
-            info["episode"].update(pos_count=0, visited_rooms=set([0]))
-        return obs, rew, done, info
+            info["episode"].update(
+                pos_count=0,
+                visited_rooms=set([0])
+            )
+        return obs, rew, term, trunc, info
 
     def reset(self):
         return self.env.reset()
@@ -305,7 +337,8 @@ class AddEpisodeStats(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
 
     def step(self, action):
-        ob, r, d, info = self.env.step(action)
+        ob, r, term, trunc, info = self.env.step(action)
+        d = term or trunc
         self.reward += r
         self.length += 1
         if d:
@@ -313,7 +346,7 @@ class AddEpisodeStats(gym.Wrapper):
                 info["episode"] = {}
             info["episode"]["reward"] = self.reward
             info["episode"]["length"] = self.length
-        return ob, r, d, info
+        return ob, r, term, trunc, info
 
     def reset(self, **kwargs):
         self.reward = 0
@@ -328,12 +361,13 @@ class AddRandomStateToInfo(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
 
     def step(self, action):
-        ob, r, d, info = self.env.step(action)
+        ob, r, term, trunc, info = self.env.step(action)
+        d = term or trunc
         if d:
             if "episode" not in info:
                 info["episode"] = {}
             info["episode"]["rng_at_episode_start"] = self.rng_at_episode_start
-        return ob, r, d, info
+        return ob, r, term, trunc, info
 
     def reset(self, **kwargs):
         self.rng_at_episode_start = copy(self.unwrapped.np_random)
@@ -364,8 +398,8 @@ class StickyActionEnv(gym.Wrapper):
         if self.unwrapped.np_random.uniform() < self.p:
             action = self.last_action
         self.last_action = action
-        obs, reward, done, info = self.env.step(action)
-        return obs, reward, done, info
+        obs, reward, term, trunc, info = self.env.step(action)
+        return obs, reward,term, trunc, info
 
 
 class MaxAndSkipEnv(gym.Wrapper):
@@ -381,7 +415,8 @@ class MaxAndSkipEnv(gym.Wrapper):
         total_reward = 0.0
         done = None
         for i in range(self._skip):
-            obs, reward, done, info = self.env.step(action)
+            obs, reward, term, trunc, info = self.env.step(action)
+            done = term or trunc
             if i == self._skip - 2:
                 self._obs_buffer[0] = obs
             if i == self._skip - 1:
